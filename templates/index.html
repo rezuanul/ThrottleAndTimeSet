@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Control</title>
+</head>
+
+<body>
+
+    <h1>Server Control Interface</h1>
+
+    <h3>Select Raspberry Pis:</h3>
+    <input type="checkbox" id="raspberryPi1" value="http://192.168.82.72:5001"> Raspberry Pi 1 <br>
+    <input type="checkbox" id="raspberryPi2" value="http://192.168.82.69:5000"> Raspberry Pi 2 <br>
+
+    <h2>Network Throttle</h2>
+    <label for="downloadLimit">Download Limit:</label>
+    <input type="text" id="downloadLimit" placeholder="200kbit">
+    <label for="uploadLimit">Upload Limit:</label>
+    <input type="text" id="uploadLimit" placeholder="200kbit">
+    <button onclick="setThrottle()">Set Throttle</button>
+    <button onclick="clearThrottle()">Clear Throttle</button>
+
+    <h2>NTP Settings</h2>
+    <button onclick="enableNTP()">Enable NTP</button>
+
+    <h2>Set Custom Time</h2>
+    <label for="dateTime">Date & Time:</label>
+    <input type="text" id="dateTime" placeholder="YYYY-MM-DD HH:MM:SS">
+    <button onclick="setCustomTime()">Set Time</button>
+
+    <p id="message"></p>
+
+    <script>
+        function getSelectedPis() {
+            const pis = [];
+            for (let i = 1; i <= 2; i++) {
+                const checkbox = document.getElementById(`raspberryPi${i}`);
+                if (checkbox && checkbox.checked) {
+                    pis.push(checkbox.value);
+                }
+            }
+            return pis;
+        }
+
+        async function postData(piUrl, endpoint = '', data = {}) {
+            const url = piUrl + endpoint;
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Request failed with status: ${response.status}`);
+                }
+                return response.json();
+
+            } catch (error) {
+                console.error("Failed to post data:", error);
+                return { message: error.message || "An error occurred." };
+            }
+        }
+
+        function executeForAllPis(func) {
+            const pis = getSelectedPis();
+            pis.forEach(pi => {
+                func(pi);
+            });
+        }
+
+        function setThrottle() {
+            const downloadLimit = document.getElementById('downloadLimit').value;
+            const uploadLimit = document.getElementById('uploadLimit').value;
+
+            executeForAllPis(pi => {
+                postData(pi, '/set_throttle', {
+                    downloadLimit,
+                    uploadLimit
+                }).then(data => {
+                    document.getElementById('message').innerText += data.message + " for " + pi + "\n";
+                });
+            });
+        }
+
+        function clearThrottle() {
+            executeForAllPis(pi => {
+                postData(pi, '/clear_throttle').then(data => {
+                    document.getElementById('message').innerText += data.message + " for " + pi + "\n";
+                });
+            });
+        }
+
+        function enableNTP() {
+            executeForAllPis(pi => {
+                postData(pi, '/enable_ntp').then(data => {
+                    document.getElementById('message').innerText += data.message + " for " + pi + "\n";
+                });
+            });
+        }
+
+        function setCustomTime() {
+            const dateTime = document.getElementById('dateTime').value;
+            executeForAllPis(pi => {
+                postData(pi, '/set_custom_time', {
+                    dateTime
+                }).then(data => {
+                    document.getElementById('message').innerText += data.message + " for " + pi + "\n";
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>
