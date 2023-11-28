@@ -1,10 +1,6 @@
-First need to save Final_Code_With_JsonFile.py and ip.json file to all raspberry pis, together in the same folder.
+First need to save FinalThrottle2811.py and ip.json file together in the same folder to all raspberry pis.
 
-Then need to install {sudo modprobe ifb} and {sudo ip link add name ifb0 type ifb} in every raspberry pi's.
-
-![image](https://github.com/rezuanul/ThrottleAndTimeSet/assets/45296940/5d7a00bb-bce5-4821-8ebe-1a2b0ea14c8a)
-
-Then need to run  {sudo python3 Final_Code_With_JsonFile.py }.
+Then need to run  {sudo python3 FinalThrottle2811.py }.
 ![image](https://github.com/rezuanul/ThrottleAndTimeSet/assets/45296940/359a076a-f50c-41e1-986b-ac901a38902f)
 
 Everytime you need to clear throattling speed by pressing YES. Otherwise you need to clear the throattling manually for better performance of this system by this commands. 
