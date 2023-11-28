@@ -2,19 +2,37 @@ import json  # Import the JSON module to work with JSON files
 import os  # Import the OS module for interacting with the operating system
 import subprocess  # Import the subprocess module for running system commands
 
-# Function to check if a specific kernel module is loaded
 def is_module_loaded(module_name):
-    # Execute the 'lsmod' command to list loaded kernel modules and capture its output
+    # Run 'lsmod' to list all currently loaded modules and capture its output
     result = subprocess.run(['lsmod'], capture_output=True, text=True)
-    # Check if the module name is present in the command output
-    return module_name in result.stdout
+    # Check if the specified module is in the output
+    if module_name in result.stdout:
+        return True  # Module is already loaded
 
-# Function to check if a network interface is present
+    # Try to load the module using 'modprobe' if not already loaded
+    try:
+        subprocess.run(['sudo', 'modprobe', module_name], check=True)
+        return True  # Module loading attempted successfully
+    except subprocess.CalledProcessError:
+        # Handle errors during module loading process
+        print(f"Failed to load module {module_name}")
+        return False  # Return False if module loading failed
+
 def is_interface_present(interface_name):
-    # Execute the 'ip link show' command for the specific interface and capture the result
+    # Check if the specified network interface exists using 'ip link show'
     result = subprocess.run(['ip', 'link', 'show', interface_name], capture_output=True)
-    # Return True if the command executed successfully (returncode is 0)
-    return result.returncode == 0
+    # Evaluate the result of the command
+    if result.returncode == 0:
+        return True  # Interface exists
+
+    # If interface does not exist, try to add it
+    try:
+        subprocess.run(['sudo', 'ip', 'link', 'add', 'name', interface_name, 'type', 'ifb'], check=True)
+        return True  # Interface creation attempted successfully
+    except subprocess.CalledProcessError:
+        # Handle errors during interface creation process
+        print(f"Failed to add interface {interface_name}")
+        return False  # Return False if interface creation failed
 
 # Function to read and return the content of a JSON file
 def read_json_file(filename):
@@ -74,6 +92,11 @@ def main():
 
     # Prompt user for speed limit input
     speed = input("Enter the speed limit (in kbit): ")
+	
+    # Ensure the 'ifb' module is loaded and 'ifb0' interface is present
+    if not is_module_loaded('ifb') or not is_interface_present('ifb0'):
+        print("Failed to prepare network environment. Exiting.")
+        return
 
     # Set up network environment for throttling
     setup_environment(speed)
